@@ -1,26 +1,23 @@
 import requests
 import json
 from deep_translator import GoogleTranslator, single_detection
+from utils import keys
 
 
 
 def TranslateCityName(name):
-    keysfile = open('apikeys.txt', 'r')
-    keys = json.loads(keysfile.read())[0]
     langToken = keys['detectlangToken']
     lang = single_detection(name, api_key=langToken)
-    if lang == 'ru':
+    if lang != 'en':
         translatedEn = GoogleTranslator(source='auto', target='en').translate(name)
-        translatedRu = name
+        nativeLang = name
     else:
-        translatedRu = GoogleTranslator(source='auto', target='ru').translate(name)
+        nativeLang = name
         translatedEn = name
-    return translatedEn, translatedRu
+    return translatedEn, nativeLang
 
 
 def GetWeatherInCity(id):
-    keysfile = open('apikeys.txt', 'r')
-    keys = json.loads(keysfile.read())[0]
     weatherToken = keys['openweatherToken']
     link = "http://api.openweathermap.org/data/2.5/weather?id=" + str(id)+ "&appid=" + weatherToken + "&units=metric"
     response = requests.get(link)
@@ -31,22 +28,25 @@ def GetWeatherInCity(id):
 
 
 def GetCities(name):
-    with open ("city.list.json", 'r', encoding='utf-8') as citiesIdsJsonFile:
-        citiesIdsJson = citiesIdsJsonFile.read()
-    translatedEn, translatedRu = TranslateCityName(name)
-    citiesIds = json.loads(citiesIdsJson)
+    translatedEn, nativeLang = TranslateCityName(name)
+    citiesIds = JsonToList("city.list.json")
     cities = [element for element in citiesIds if element['name'] == translatedEn]
     if cities == []:
-        cities = [element for element in citiesIds if element['name'] == translatedRu]
+        cities = [element for element in citiesIds if element['name'] == nativeLang]
         if cities == []:
             return False
     return cities
 
 def GetCityById(id):
-    with open ("city.list.json", 'r', encoding='utf-8') as citiesIdsJsonFile:
-        citiesIdsJson = citiesIdsJsonFile.read()
-    citiesIds = json.loads(citiesIdsJson)
+    citiesIds = JsonToList("city.list.json")
     city = next((element for element in citiesIds if element['id'] == int(id)), False)
     if city == False:
         return False
     return city['name']
+
+def JsonToList(name):
+    with open(name, 'r', encoding='utf-8') as citiesIdsJsonFile:
+        citiesIdsJson = citiesIdsJsonFile.read()
+        citiesIds = json.loads(citiesIdsJson)
+        return citiesIds
+    print("Couldn't read the file")

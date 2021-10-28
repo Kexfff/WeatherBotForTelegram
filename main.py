@@ -1,17 +1,18 @@
 from telegram.ext import CommandHandler
 from telegram.ext import Updater
-import json
 from openweather import GetCities, GetWeatherInCity, GetCityById
+from utils import keys
 
 
-keysfile = open('apikeys.txt', 'r')
-keys = json.loads(keysfile.read())[0]
+
+
 telegramToken = keys['telegramToken']
 updater = Updater(token=telegramToken)
 dispatcher = updater.dispatcher
 
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Send me your city name, please")
+    print(update.effective_chat.id)
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
 
